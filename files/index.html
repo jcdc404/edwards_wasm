@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Ed25519_dalek WASM Demo</title>
+  </head>
+  <body>
+    <button>click me</button>
+    <script type="module">
+      let kp;
+      let pubkey;
+      let signature;
+      let verified;
+      import init, { gen_keypair, gen_signature, signature_verifies, pubkey_from_pair, pubkey_from_bytes } from './files/wasm_dalek.js';
+      async function run() {
+        await init();
+        //generate keypair
+        kp = gen_keypair();
+        console.log("key_pair",kp);
+        //generate public key
+        pubkey = pubkey_from_pair(kp);
+        console.log("pubk: ",pubkey);
+        //encode message as bytes
+        let te = new TextEncoder();
+        let msg = Uint8Array.from(te.encode("testing"));
+        //generate signature of message bytes from keypair
+        signature = gen_signature(kp,msg);
+        console.log("sig",signature);
+        //verify signature generated
+        verified = signature_verifies(pubkey,signature,msg);
+        console.log("verified",verified);
+      }
+      run()
+      //On click button - send 
+      document.querySelector("button").addEventListener('click',(e)=>{
+        //I don't know fi I need all of these, probably not
+        e.preventDefault();
+        e.stopImmediatePropagation()
+        e.stopPropagation()
+
+        fetch("/",{
+          method: "POST", 
+                        headers: {
+                            "x-sec-pubkey":arrayBufferToBase64(pubkey),
+                            "x-sec-signature":arrayBufferToBase64(signature),
+                            "x-sec-content":btoa("testing"),
+                            "content-type": "text/plain",
+                        }, 
+        }).then((res)=>{
+          let heads = Object.fromEntries(res.headers);
+          let rcvd_pubkey = new Uint8Array(base64ToArrayBuffer(heads["x-pub"]));
+          let rcvd_sig = new Uint8Array(base64ToArrayBuffer(heads["x-sig"]));
+          let sv = signature_verifies(
+            rcvd_pubkey,
+            rcvd_sig,
+            new TextEncoder().encode("testing")
+          )
+            console.log("sv",sv);
+          res.text()}).then((data)=>{console.log(data)})
+          });
+          
+
+
+///////////////////////////////////////////   
+//FROM isummation.com 
+function arrayBufferToBase64( buffer ) {
+	var binary = '';
+	var bytes = new Uint8Array( buffer );
+	var len = bytes.byteLength;
+	for (var i = 0; i < len; i++) {
+		binary += String.fromCharCode( bytes[ i ] );
+	}
+	return window.btoa( binary );
+}  
+	
+function base64ToArrayBuffer(base64) {
+    var binary_string =  window.atob(base64);
+    var len = binary_string.length;
+    var bytes = new Uint8Array( len );
+    for (var i = 0; i < len; i++)        {
+        bytes[i] = binary_string.charCodeAt(i);
+    }
+    return bytes.buffer;
+}
+//////////////////////////////////////////
+//https://tung.github.io/posts/rust-and-webassembly-without-a-bundler///
+//used the above to as reference to generate the wasm and resulting js using wasm_bindgen
+
+</script>
+
+
+  </body>
+</html>
