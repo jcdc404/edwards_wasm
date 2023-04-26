@@ -1,8 +1,8 @@
 use axum::{body::Body, http::response, response::IntoResponse, routing::get, Router};
-use ed25519_dalek::{self, Keypair, PublicKey, Signer,Signature};
+use data_encoding;
+use ed25519_dalek::{self, Keypair, PublicKey, Signature, Signer};
 use hyper::{self, StatusCode};
 use std::fs;
-use data_encoding;
 
 #[tokio::main]
 async fn main() {
@@ -70,12 +70,13 @@ async fn edwards_test(req: hyper::Request<Body>) -> impl IntoResponse {
     let kp = Keypair::generate(&mut csprng);
     let ret_sig = kp.sign("testing".as_bytes());
 
-
     response::Builder::new()
         .status(StatusCode::OK)
         .header("x-pub", data_encoding::BASE64.encode(kp.public.as_bytes()))
         .header("x-sig", data_encoding::BASE64.encode(&ret_sig.to_bytes()))
-        .body(Body::empty()).unwrap().into_response()
+        .body(Body::empty())
+        .unwrap()
+        .into_response()
 }
 async fn srv_file(req: hyper::Request<Body>) -> impl IntoResponse {
     if req.uri().path().to_string() == "/".to_string() {

@@ -3,8 +3,6 @@ use rand::Error;
 use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsValue;
 use web_sys::{Crypto, Window,console};
-//https://tung.github.io/posts/rust-and-webassembly-without-a-bundler/
-//https://github.com/rustwasm/wasm-bindgen/discussions/3396
 
 #[wasm_bindgen(start)]
 pub fn main() -> Result<(), JsValue> {
@@ -62,7 +60,6 @@ pub fn pubkey_from_pair(kp:Vec<u8>)->Vec<u8>{
 }
 #[wasm_bindgen]
 pub fn pubkey_from_bytes(pubkey:Vec<u8>)->Vec<u8>{
-    
     PublicKey::from_bytes(pubkey.as_slice()).unwrap().as_bytes().to_vec()
 }
 
